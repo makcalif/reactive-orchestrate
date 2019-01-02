@@ -12,11 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.awt.*;
 import java.time.Duration;
 import java.util.Date;
 
@@ -36,7 +34,7 @@ public class CarController {
     }
 
     // TODO use a Mono as input to the end point for stream
-    @PostMapping(value = "cars/{id}/booking")
+    @PostMapping(value = "cars/{id}/booking", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Mono<Booking> createBooking (@RequestBody Car car) {
         logger.debug("start booking....");
         Mono<Long> delay = Mono.delay(Duration.ofSeconds(5)).log();
