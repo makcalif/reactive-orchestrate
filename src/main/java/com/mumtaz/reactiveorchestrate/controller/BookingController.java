@@ -43,13 +43,6 @@ public class BookingController {
         return Mono.just(new ResponseEntity<String>( "dummy", HttpStatus.OK));
     }
 
-    private Mono<ResponseEntity<Void>> requestCar(Car car) {
-        return bookClient.post()
-                .uri("/cars/{id}/booking", car.getId())
-                .exchange()
-                .flatMap(response -> response.toEntity(Void.class));
-    }
-
     @GetMapping(value = "/testMono", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Mono<ResponseEntity<String>> testBookingMono() {
         LocationGenerator locationGenerator = new LocationGenerator(34L, 34L);
@@ -85,6 +78,26 @@ public class BookingController {
 
         Flux delayedData = data.zipWith(delay, (dta, dely) -> dta);
         return delayedData;
+    }
+
+    @GetMapping(value = "/bookmulti")
+    public Mono<ResponseEntity<Void>> testBookingMulti() {
+        return carsClient.get()
+                .uri("/cars")
+                .retrieve()
+                .bodyToFlux(Car.class)
+                .doOnNext(car -> logger.debug("trying to book car : {}", car))
+                .take(2)
+                .flatMap(this::requestCar)
+                .next()
+                .doOnNext(car -> logger.debug("booked car {}", car));
+    }
+
+    private Mono<ResponseEntity<Void>> requestCar(Car car) {
+        return bookClient.post()
+                .uri("/cars/{id}/booking", car.getId())
+                .exchange()
+                .flatMap(response -> response.toEntity(Void.class));
     }
 }
 

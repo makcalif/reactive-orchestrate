@@ -20,19 +20,19 @@ public class ReactiveOrchestrateApplication {
 	}
 
 
-//	@Bean
-//	CommandLineRunner populateMongoCars (MongoOperations mongo) {
-//		return (String... args) -> {
-//			mongo.dropCollection(Car.class);
-//			mongo.createCollection(Car.class, CollectionOptions.empty().size(10000).capped());
-//
-//			LocationGenerator locationGenerator = new LocationGenerator(33,33);
-//			Flux.range(1, 100)
-//					.map(i -> new Car(i.longValue(), locationGenerator.location()))
-//					.doOnNext(mongo::save)
-//					.log()
-//					.blockLast(Duration.ofSeconds(5));
-//		};
-//	}
+	@Bean
+	CommandLineRunner populateMongoCars (MongoOperations mongo) {
+		return (String... args) -> {
+			mongo.dropCollection(Car.class);
+			mongo.createCollection(Car.class, CollectionOptions.empty().size(10000).capped());
+
+			LocationGenerator locationGenerator = new LocationGenerator(33,33);
+			Flux.range(1, 100)
+					.map(i -> new Car(i.longValue(), locationGenerator.location()))
+					.doOnNext(mongo::save)
+					.log()
+					.blockLast(Duration.ofSeconds(5));
+		};
+	}
 }
 
