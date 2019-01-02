@@ -14,5 +14,7 @@ import java.util.Date;
 public class Booking {
     Long bookingId;
     Date bookingTime;
+    Car car;
+    Location location;
 
 }

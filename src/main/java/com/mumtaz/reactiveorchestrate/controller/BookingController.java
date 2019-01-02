@@ -12,16 +12,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
 public class BookingController {
-
+    Logger logger = LoggerFactory.getLogger(BookingController.class);
     private final WebClient carsClient = WebClient.create("http://localhost:8080");
     private final WebClient bookClient = WebClient.create("http://localhost:8080");
 
-    private static final Logger logger = LoggerFactory.getLogger(BookingController.class);
     @PostMapping("/booking")
     public Mono<ResponseEntity<String>> book() {
         logger.debug("Processing booking request");
@@ -46,17 +46,25 @@ public class BookingController {
     }
 
     @GetMapping("/testMono")
-    public Mono<ResponseEntity<Void>> testBookingMono() {
+    public Mono<ResponseEntity<String>> testBookingMono() {
         LocationGenerator locationGenerator = new LocationGenerator(34L, 34L);
         Car car = new Car(123L, locationGenerator.location());
+        logger.debug("========== client booking start ...");
         return bookClient.post()
                 .uri("/cars/123/booking")
                 .body(BodyInserters.fromObject(car))
                 .exchange()
+                .log()
                 .flatMap(response -> {
-                    System.out.println(response);
-                    return response.toEntity(Void.class);
-                } );
+                    // When you flatmap you're basically "merging" all the publishers
+                    // from the map into a single Mono
+                    if(response.statusCode().is4xxClientError()) {
+                        response.body((clientHttpResponse, context) -> {
+                            return Mono.just( new ResponseEntity<String>(clientHttpResponse.getBody().toString(), HttpStatus.OK));
+                        });
+                    }
+                    return response.toEntity(String.class);
+                } ) ;
 
     }
 }
