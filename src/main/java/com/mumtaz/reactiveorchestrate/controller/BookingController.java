@@ -1,5 +1,6 @@
 package com.mumtaz.reactiveorchestrate.controller;
 
+import com.mumtaz.reactiveorchestrate.domain.Booking;
 import com.mumtaz.reactiveorchestrate.domain.Car;
 import com.mumtaz.reactiveorchestrate.domain.Location;
 import com.mumtaz.reactiveorchestrate.domain.LocationGenerator;
@@ -13,12 +14,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.stream.Stream;
 
 @RestController
@@ -81,24 +80,39 @@ public class BookingController {
     }
 
     @GetMapping(value = "/bookmulti")
-    public Mono<ResponseEntity<Void>> testBookingMulti() {
+    public Mono<ResponseEntity<Booking>> testBookingMulti() {
         return carsClient.get()
                 .uri("/cars")
                 .retrieve()
                 .bodyToFlux(Car.class)
                 .doOnNext(car -> logger.debug("trying to book car : {}", car))
-                .take(2)
+                .take(5)
                 .flatMap(this::requestCar)
                 .next()
-                .doOnNext(car -> logger.debug("booked car {}", car));
+                .doOnNext(response -> logger.debug("booked car with response {}", response));
     }
 
-    private Mono<ResponseEntity<Void>> requestCar(Car car) {
+    private Mono<ResponseEntity<Booking>> requestCar(Car car) {
         return bookClient.post()
                 .uri("/cars/{id}/booking", car.getId())
+                .body(BodyInserters.fromObject(car))
                 .exchange()
-                .flatMap(response -> response.toEntity(Void.class));
+                .flatMap(response -> {
+                    return response.toEntity(Booking.class);
+                });
     }
+
+//    private Mono<Car> dummyBook(Car car)   {
+//        Random random = new Random();
+//        int seconds = ThreadLocalRandom.current().nextInt(1, 20);
+//        logger.debug("delay for  booking {} is {} seconds", car, seconds);
+//        try {
+//            Thread.sleep(seconds * 1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        return Mono.just(car);
+//    }
 }
 
 

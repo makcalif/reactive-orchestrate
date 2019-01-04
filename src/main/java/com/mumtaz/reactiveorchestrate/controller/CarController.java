@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Date;
+import java.util.concurrent.ThreadLocalRandom;
 
 @RestController
 public class CarController {
@@ -36,14 +37,14 @@ public class CarController {
     // TODO use a Mono as input to the end point for stream
     @PostMapping(value = "cars/{id}/booking", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Mono<Booking> createBooking (@RequestBody Car car) {
-        logger.debug("start booking....");
-        Mono<Long> delay = Mono.delay(Duration.ofSeconds(5)).log();
+        int seconds = ThreadLocalRandom.current().nextInt(1, 20);
+        logger.debug("start booking...car {} with delay {}", car.getId(), seconds);
+        Mono<Long> delay = Mono.delay(Duration.ofSeconds(seconds)).log();
         Location location = new Location();
         Mono<Booking> bookingMono = Mono.just(new Booking(123L, new Date(), car, location)).log();
         Mono<Booking> bookingWithDelay =
                 bookingMono.
                         zipWith(delay.log(), (booking, longDelay) -> booking);
-        logger.debug("booking complete");
         return bookingWithDelay;
     }
 }
